@@ -1,4 +1,4 @@
-    import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   TextField,
@@ -11,9 +11,20 @@ import {
 } from '@mui/material';
 import { Autocomplete } from '@mui/material';
 
+import { fetchScryfallTags } from '../ScryfallImporter'
+
 const MultiSearch: React.FC = () => {
-    
-  const scryfallTags = ['synergy-artifact', 'synergy-commander', 'synergy-sacrifice', 'draw', 'scry'];
+  const [scryfallTags, setScryfallTags] = useState<string[]>([]);
+  const [isTagsLoading, setIsTagsLoading] = useState<boolean>(true);
+  useEffect(() => {
+    async function loadTags() {
+      const tags = await fetchScryfallTags();
+      setScryfallTags(tags);
+      setIsTagsLoading(false);
+    }
+    loadTags();
+  }, []);
+
   type SearchResult = {
     query: string;
     link: string;
@@ -84,6 +95,7 @@ const MultiSearch: React.FC = () => {
       const oracleTextTerms = combo.filter((term) => oracleTexts.includes(term));
       const oracleTagTerms = combo.filter((term) => oracleTags.includes(term));
       
+
       const queryParts = [
         colorIdentity && `id:${colorIdentity}`,
         maxPrice && `usd<=${maxPrice}`,
