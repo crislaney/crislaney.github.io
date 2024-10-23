@@ -8,6 +8,10 @@ import {
   CircularProgress,
   Grid,
   Box,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl
 } from '@mui/material';
 import { Autocomplete } from '@mui/material';
 
@@ -25,6 +29,8 @@ const MultiSearch: React.FC = () => {
     loadTags();
   }, []);
 
+  console.log("Rendering MultiSearch")
+
   type SearchResult = {
     query: string;
     link: string;
@@ -32,6 +38,8 @@ const MultiSearch: React.FC = () => {
   };
   const [colorIdentity, setColorIdentity] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [cmcComparator, setCmcComparator] = useState('=');
+  const [cmcValue, setCmcValue] = useState('');
   const [oracleTextInput, setOracleTextInput] = useState('');
   const [oracleTexts, setOracleTexts] = useState<string[]>([]);
   const [oracleTags, setOracleTags] = useState<string[]>([]);
@@ -94,11 +102,13 @@ const MultiSearch: React.FC = () => {
     const fetchPromises = combinations.map(async (combo) => {
       const oracleTextTerms = combo.filter((term) => oracleTexts.includes(term));
       const oracleTagTerms = combo.filter((term) => oracleTags.includes(term));
-      
+
 
       const queryParts = [
         colorIdentity && `id:${colorIdentity}`,
         maxPrice && `usd<=${maxPrice}`,
+        cmcValue && `cmc${cmcComparator}${cmcValue}`,
+        `legal:commander`,
         ...oracleTextTerms.map((term) => `o:${term}`),
         ...oracleTagTerms.map((term) => `otag:${term}`),
       ].filter(Boolean) as string[];
@@ -165,26 +175,63 @@ const MultiSearch: React.FC = () => {
               inputProps={{ min: 0 }}
             />
           </Grid>
-          <Grid item xs={12}>
-            <TextField
-              label="Oracle Text Words/Regex"
-              fullWidth
-              value={oracleTextInput}
-              onChange={(e) => setOracleTextInput(e.target.value)}
-              onKeyDown={handleOracleTextKeyDown}
-              placeholder="Type and press Enter"
-            />
-            <Box sx={{ mt: 1 }}>
-              {oracleTexts.map((text, index) => (
-                <Chip
-                  key={index}
-                  label={text}
-                  onDelete={() => removeOracleText(index)}
-                  sx={{ mr: 1, mb: 1 }}
-                />
-              ))}
-            </Box>
+          <Grid item xs={12} sm={2}>
+            <FormControl fullWidth>
+              <InputLabel id="cmc-comparator-label">CMC Comparator</InputLabel>
+              <Select
+                labelId="cmc-comparator-label"
+                id="cmc-comparator"
+                value={cmcComparator}
+                label="CMC Comparator"
+                onChange={(e) => setCmcComparator(e.target.value)}
+              >
+                <MenuItem value="<">&lt;</MenuItem>
+                <MenuItem value="<=">&le;</MenuItem>
+                <MenuItem value="=">=</MenuItem>
+                <MenuItem value=">">&gt;</MenuItem>
+                <MenuItem value=">=">&ge;</MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
+          <Grid item xs={12} sm={10}>
+            <TextField
+              label="CMC Value"
+              type="number"
+              fullWidth
+              value={cmcValue}
+              onChange={(e) => setCmcValue(e.target.value)}
+              placeholder="e.g., 3"
+              inputProps={{ min: 0 }}
+            />
+          </Grid>
+         <Grid item xs={12}>
+            <Autocomplete
+              multiple
+              freeSolo
+              options={[]} // No predefined options
+              value={oracleTexts}
+              onChange={(event, newValue) => {
+                setOracleTexts(newValue as string[]);
+              }}
+              renderTags={(value: readonly string[], getTagProps) =>
+                value.map((option: string, index: number) => (
+                  <Chip
+                    variant="outlined"
+                    label={option}
+                    {...getTagProps({ index })}
+                    sx={{ mr: 1, mb: 1 }}
+                  />
+                ))
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Oracle Text Words/Regex"
+                  placeholder="Type and press Enter"
+                />
+              )}
+            />
+          </Grid> 
           <Grid item xs={12}>
             <Autocomplete
               multiple
@@ -211,7 +258,7 @@ const MultiSearch: React.FC = () => {
                   placeholder="Type to search tags"
                 />
               )}
-          />
+            />
           </Grid>
           <Grid item xs={12}>
             <TextField
